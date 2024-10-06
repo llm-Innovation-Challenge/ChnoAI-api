@@ -1,137 +1,40 @@
 # Conaly API
 
-## 배포된 서버
-
-https://61.109.236.49.nip.io
-
 ## 프로젝트 설명
 
-Conaly API는 Express와 TypeScript를 기반으로 구축된 RESTful API입니다. 이 프로젝트는 개발 및 배포 환경 모두에서 Docker와 Docker Compose를 사용하여 손쉽게 설정하고 실행할 수 있습니다.
+해당 서버는 flask, express등을 활용한 총 3개의 서버로 이루어져 있으며 docker를 활용하여 한 번에 빌드해야만 정상적인 작동이 가능합니다.
 
 ## 요구 사항
+
+실행하는 컴퓨터 내에 도커가 설치되어 있어야 합니다.
 
 - Node.js 18.x
 - Docker
 - Docker Compose
 
-## 프로젝트 설정
+## 환경변수 설정
 
-### 1. 레포지토리 클론
+클론 이후에 프로젝트의 루트 위치에 .env를 추가하고 해당 파일에 환경 변수 코드를 붙여넣기 해주세요.
+해당 레포를 공개 레포로 설정하여 환경변수를 노출시킬 수가 없어 해당 환경변수는 아래 제출 자료에 추가해뒀습니다.
 
-```
-git clone <your-repository-url>
-cd conaly-api
-```
+- google form 레포지토리 부분
+- chnoAI소개서 ppt 1페이지 슬라이드 노트 내용입력란(대본)
 
-### 2. 환경 변수 설정
+### 서버 실행
 
-프로젝트 루트에 .env 파일을 생성하고 다음 내용을 추가합니다:
-
-```
-PORT=8080
-MONGO_URI=your_mongo_uri
-```
-
-### 3. 의존성 설치
-
-로컬 개발 환경
-
-```
-npm install
-```
-
-## Docker 설정
-
-## 스크립트
-
-package.json 파일의 스크립트는 다음과 같습니다:
-
-```
-"scripts": {
-  "build": "tsc",                       // TypeScript 파일을 JavaScript로 컴파일
-  "start": "node dist/index.js",        // 컴파일된 파일을 실행
-  "dev": "nodemon --exec ts-node src/index.ts"  // 개발 환경에서 사용
-}
-```
-
-## 애플리케이션 실행
-
-### 개발 환경
-
-개발 환경에서는 docker-compose-dev.yml 파일을 사용하여 컨테이너를 실행합니다:
+docker-compose-dev.yml 파일을 사용하여 컨테이너를 실행합니다:
 
 ```
 docker-compose -f docker-compose-dev.yml up
 ```
 
-또는 로컬 환경에서 직접 실행할 수 있습니다:
-
-```
-npm run dev
-```
-
-### 배포 환경
-
-배포 환경에서는 기본 docker-compose.yml 파일을 사용하여 컨테이너를 실행합니다:
-
-```
-docker-compose up
-```
-
-배포 환경에서 TypeScript 파일을 컴파일하고 실행하려면 다음 명령어를 사용합니다:
-
-```
-npm run build
-npm start
-```
-
-## 추가 정보
-
-MongoDB 연결: .env 파일에 MONGO_URI를 설정하여 MongoDB에 연결합니다.
-포트 설정: 기본적으로 포트 8080에서 애플리케이션이 실행됩니다. 필요한 경우 .env 파일에서 포트를 변경할 수 있습니다.
-이 프로젝트에 대한 질문이나 문제가 발생하면 이슈 트래커에 문제를 제출하세요.
-
-이 README 파일은 프로젝트 설정, 개발 및 배포 환경에서의 실행 방법을 포함하여 필요한 모든 정보를 제공합니다. 각 단계에 대한 명확한 설명과 함께 사용 방법을 상세히 설명하여 사용자가 쉽게 따라할 수 있도록 작성되었습니다.
+서버 실행후 서버의 로그에서 진행상황을 확인할 수 있습니다. 일반적으로 AI로직 1회 실행시 5~10분정도 소요됩니다.
 
 ## 서버 구조 및 각 서버의 목표와 기능
 
 ### 서버 구조
 
-본 프로젝트는 `main-server`와 `notion-server`로 구성되어 있으며, 배포용 및 개발용 두 가지 환경에서 운영됩니다. 각 서버는 Docker를 사용하여 컨테이너화되어 있으며, `docker-compose`를 통해 배포 및 개발 환경을 설정합니다.
-
-#### 1. main-server
-
-- **배포용**
-
-  - **경로**: `./main-server`
-  - **Dockerfile**: `Dockerfile-prod`
-  - **포트**: `8080`
-  - **환경 변수**: `NODE_ENV=production`
-  - **설명**: main-server는 프로덕션 환경에서 Node.js 애플리케이션을 실행합니다. Puppeteer 및 PM2를 사용하여 애플리케이션의 안정적인 실행을 보장합니다.
-
-- **개발용**
-  - **경로**: `./main-server`
-  - **Dockerfile**: `Dockerfile`
-  - **포트**: `8080`
-  - **환경 변수**: `NODE_ENV=development`
-  - **설명**: 개발 환경에서 nodemon 및 ts-node를 사용하여 코드 변경 시 자동으로 서버를 재시작합니다. 개발 편의를 위해 로컬 디렉토리와 컨테이너 디렉토리를 매핑합니다.
-
-#### 2. notion-server
-
-- **배포용**
-
-  - **경로**: `./notion-server`
-  - **Dockerfile**: `Dockerfile-prod`
-  - **포트**: `8000`
-  - **환경 변수**: `NODE_ENV=production`
-  - **설명**: notion-server는 프로덕션 환경에서 Node.js 애플리케이션을 실행합니다. 주로 Notion API와의 연동을 담당합니다.
-
-- **개발용**
-  - **경로**: `./notion-server`
-  - **Dockerfile**: `Dockerfile`
-  - **포트**: `8000`
-  - **환경 변수**: `NODE_ENV=development`
-  - **설명**: 개발 환경에서 notion-server는 로컬 디렉토리와 컨테이너 디렉토리를 매핑하여 개발 편의를 제공합니다.
+본 프로젝트는 `main-server`와 `notion-server`, `ai-server`로 구성되어 있으며, 배포용 및 개발용 두 가지 환경에서 운영됩니다. 각 서버는 Docker를 사용하여 컨테이너화되어 있으며, `docker-compose`를 통해 배포 및 개발 환경을 설정합니다.
 
 ### 각 서버의 목표와 기능
 
@@ -160,6 +63,17 @@ MongoDB 연결: .env 파일에 MONGO_URI를 설정하여 MongoDB에 연결합니
   - Notion 데이터의 로컬 데이터베이스 저장 및 동기화
   - 사용자 인터페이스에 제공할 데이터 가공
 
+#### AI Server
+
+- **목표**
+
+  - 메인 서버로부터 AI로직 처리 요청을 받아 파이썬의 라이브러리들을 활용하여 LLM을 활용하는 작업 수행
+  - 메인 서버로부터 링크와 함께 크롤링 요청을 받아 chatGPT공유링크 내의 정보를 크롤링하여 서버에 저장하는 작업 수행
+
+- **기능**
+  - 대화내용에 대한 기술문서 작성
+  - 링크를 받아 해당 링크에 대한 크롤링 후 데이터베이스에 저장
+
 ### 서버 구조 다이어그램
 
 ```mermaid
@@ -170,124 +84,3 @@ graph TD;
     D -->|Notion 데이터 처리| E[Notion API]
 
 ```
-
-# 실행 명령어
-
-## notion-server 개발용
-
-1. Docker 이미지 빌드
-
-```
-
-cd ./notion-server
-docker build -t notion-server-dev-image -f ./Dockerfile .
-
-```
-
-2. Docker 컨테이너 실행
-
-```
-
-docker run -p 8000:8000 --name notion-server-dev-container --env-file ../.env -e NODE_ENV=development notion-server-dev-image
-
-```
-
-## notion-server 배포용
-
-1. Docker 이미지 빌드
-
-```
-
-cd ./notion-server
-docker build -t notion-server-image -f ./Dockerfile-prod .
-
-```
-
-2. Docker 컨테이너 실행
-
-```
-
-docker run -p 8000:8000 --name notion-server-container --env-file ../.env -e NODE_ENV=production notion-server-image
-
-```
-
-## main-server 개발용
-
-1. Docker 이미지 빌드
-
-```
-
-cd ./main-server
-docker build -t main-server-dev-image -f ./Dockerfile .
-
-```
-
-2. Docker 컨테이너 실행
-
-```
-
-docker run -p 8080:8080 --name main-server-dev-container --env-file ../.env -e NODE_ENV=development main-server-dev-image
-
-```
-
-## main-server 배포용
-
-1. Docker 이미지 빌드
-
-```
-
-cd ./main-server
-docker build -t main-server-image -f ./Dockerfile-prod .
-
-```
-
-2. Docker 컨테이너 실행
-   docker run -p 8080:8080 --name main-server-container --env-file ../.env -e NODE_ENV=production main-server-image
-
-## docker-compose 파일 실행 명령어
-
-### 배포용 docker-compose 실행 명령어
-
-1. docker-compose 파일이 있는 디렉토리로 이동
-
-```
-
-cd /path/to/docker-compose-directory
-
-```
-
-2. docker-compose 실행
-
-```
-
-docker-compose up --build
-
-```
-
-### 개발용 docker-compose 실행 명령어
-
-1. docker-compose 파일이 있는 디렉토리로 이동
-
-```
-
-cd /path/to/docker-compose-directory
-
-```
-
-2. docker-compose 실행
-
-```
-
-docker-compose -f docker-compose-dev.yml up --build
-
-```
-
-pip freeze > requirements.txt
-docker build -t ai-server-dev-image -f Dockerfile .
-docker run -p 4000:4000 --name ai-server-dev-container --env-file ../.env ai-server-dev-image
-
-docker build -t ai-server-dev-image -f Dockerfile-prod .
-docker run -p 4000:4000 --name ai-server-container --env-file ../.env ai-server-image
-pip freeze > requirements.txt
-
-watchmedo auto-restart --patterns="\*.py" --recursive -- flask run --host=0.0.0.0 --port=4000
