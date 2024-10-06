@@ -1,0 +1,34 @@
+version: "3"
+services:
+  main-server:
+    build:
+      context: ./main-server
+      dockerfile: Dockerfile-prod
+    ports:
+      - "8080:8080"
+    environment:
+      - NODE_ENV=production
+    env_file:
+      - .env
+
+  notion-server:
+    build:
+      context: ./notion-server
+      dockerfile: Dockerfile-prod
+    ports:
+      - "8000:8000"
+    environment:
+      - NODE_ENV=production
+    env_file:
+      - .env
+
+  ai-server:
+    build:
+      context: ./ai-server
+      dockerfile: Dockerfile-prod
+    ports:
+      - "4000:4000"
+    environment:
+      - FLASK_ENV=production
+    env_file:
+      - .env
