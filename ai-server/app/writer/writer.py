@@ -206,7 +206,7 @@ def replace_code_snippets(document, snippets_dict):
         # 대체할 패턴을 정의
         pattern = f"<-- {snippet_key}:.*?-->"
         # document 내에서 해당 placeholder를 딕셔너리의 value로 대체
-        document = re.sub(pattern, "```" + snippets_dict[snippet_key] + "```\n", document)
+        document = re.sub(pattern, "```" + snippets_dict[snippet_key] + "\n```\n", document)
     
     return document
 
@@ -214,8 +214,8 @@ def make_blog(state: GraphState):
     for index in state['final_documents']:
         text = state['final_documents'][index]
         t = replace_code_snippets(text, state['code_document'])
-        t = t.lstrip('#')
-        t = t.lstrip(' ')
+        # t = t.lstrip('#')
+        # t = t.lstrip(' ')
         state['final_documents'][index] = t
         #print(t, end='\n\n')
     return state
