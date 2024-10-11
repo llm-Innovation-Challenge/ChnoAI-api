@@ -10,6 +10,8 @@ from typing import List, TypedDict, Annotated
 import numpy as np
 from evaluation_utils import EvaluationUtils
 
+from app.type import QA
+
 load_dotenv()
 
 # Initialize Langfuse and models
@@ -21,10 +23,6 @@ evaluation_utils = EvaluationUtils()
 
 API_URL = "https://api.upstage.ai/v1/solar/chat/completions"
 HEADERS = {"Authorization": f"Bearer {os.getenv('UPSTAGE_API_KEY')}"}
-
-class q_and_a(TypedDict):
-    q: str
-    a: str
 
 def contains_korean(text: str) -> bool:
     return any('가' <= char <= '힣' for char in text)
@@ -54,7 +52,7 @@ def translate_text_with_api(text: str, model: str) -> str:
         print(f"Translation API error: {response.status_code}, {response.text}")
         return text
 
-def translate_q_and_a(conversation_list: List[q_and_a], translation_model: str, passage_embeddings):
+def translate_q_and_a(conversation_list: List[QA], translation_model: str, passage_embeddings):
     translated_conversations = []
     
     for conversation in conversation_list:
@@ -105,7 +103,7 @@ def translate_q_and_a(conversation_list: List[q_and_a], translation_model: str, 
         else:
             translated_a = answer  # If the answer is already in English, no translation needed
 
-        translated_conversations.append(q_and_a(q=translated_q, a=translated_a))
+        translated_conversations.append(QA(q=translated_q, a=translated_a))
 
     return translated_conversations
 

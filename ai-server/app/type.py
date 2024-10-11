@@ -7,10 +7,6 @@ class Message(TypedDict):
     message_type: str
     message_content: str
 
-class q_and_a(TypedDict):
-    q: str
-    a: str 
-
 class CodeStorage(TypedDict):
     code_description: str
     code_index:str
@@ -27,7 +23,7 @@ class QAProcessorGraphState(TypedDict):
     code_documents: list[CodeStorage]             # 처리된 코드 문서 정보 리스트
 
 class WriterGraphState(TypedDict): 
-    preprocessed_conversations: list[q_and_a]
+    preprocessed_conversations: list[QA]
     code_document: dict
     message_to_index_dict: dict
     final_documents: dict

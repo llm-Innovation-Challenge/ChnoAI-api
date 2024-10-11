@@ -19,13 +19,11 @@ from typing import Annotated, Literal, TypedDict
 # langfuse
 from langfuse import Langfuse
 from langfuse.callback import CallbackHandler
+from app.type import QA
 
-class q_and_a(TypedDict):
-    q: str
-    a: str
 
 class GraphState(TypedDict): 
-    preprocessed_conversations: list[q_and_a]
+    preprocessed_conversations: list[QA]
     code_document: dict
     message_to_index_dict: dict
     final_documents: dict

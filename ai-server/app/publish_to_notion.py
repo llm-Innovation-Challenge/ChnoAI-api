@@ -11,7 +11,7 @@ import re
 from flask import Blueprint, request, jsonify
 
 
-
+GPT_FORMATTER_ON = True;
 NOTION_TOKEN = os.getenv('NOTION_TOKEN')
 NOTION_DATABASE_ID = os.getenv('NOTION_DATABASE_ID')
 
@@ -196,7 +196,7 @@ def publish_to_notion():
     tech_stack_tags = data.get('tech_stack_tags', [])
     try:
         if (os_tags.__len__() == 0 and framework_tags.__len__() == 0 and language_tags.__len__() == 0 and tech_stack_tags.__len__() == 0):
-            formatted_title, formatted_content = format_content(content)
+            formatted_title, formatted_content =  format_content(content) if GPT_FORMATTER_ON else (title, content)
     except Exception as e:
         print("")
     if not formatted_title or not formatted_content:

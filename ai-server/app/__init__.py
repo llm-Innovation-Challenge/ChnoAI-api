@@ -1,3 +1,4 @@
+from typing import final
 from flask import Flask, request, jsonify, render_template
 import requests
 from playwright.sync_api import sync_playwright
@@ -7,7 +8,9 @@ from dotenv import load_dotenv
 from supabase import create_client, Client
 from langfuse.callback import CallbackHandler
 from app.utils import fetch_messages
-
+import logging
+import json
+logging.basicConfig(level=logging.INFO, format='%(asctime)s - %(levelname)s - %(message)s')
 from app.subtitle_generator.subtitle_generator import SubtitleGenerator
 from app.processing_qna.qna_processor import run_pipeline
 from app.processing_qna.processed_qna_db import ProcessedQnADBHandler
@@ -144,6 +147,13 @@ def create_app():
                 "callbacks": [langfuse_handler]}
         )
 
+        ###################규진 결과물 출력######################
+        # json.dumps를 사용하여 객체를 문자열로 변환, string만 출력이 가능합니다.
+        logging.info("final_state: %s", json.dumps(final_state["final_documents"], default=str))
+        #########################################
+
+
+        # 입력된 딕셔너리의 값들을 줄바꿈으로 연결하여 하나의 문자열로 만듭니다.
         final_technote = format_input(final_state["final_documents"]);
         title = get_current_datetime()
 
