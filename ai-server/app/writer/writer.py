@@ -2,6 +2,7 @@ from operator import not_
 import os
 import re
 from tabnanny import check
+from tqdm import tqdm
 # .env 파일의 환경 변수를 로드합니다.
 from certifi import contents
 from dotenv import load_dotenv
@@ -108,7 +109,7 @@ def remove_after_second_hashes(text):
 
 def make_final_documents(state: GraphState):
     preprocessed_conversations = state['preprocessed_conversations']
-    for i in range(len(preprocessed_conversations)):
+    for i in tqdm(range(len(preprocessed_conversations))):
         qa = preprocessed_conversations[i]
         indices_for_qa = state['message_to_index_dict'][str(i)]
         #print('QA', i, 'processing...')
@@ -168,7 +169,7 @@ def document_refinement(state: GraphState):
     code_list = list(state['code_document'].keys())
     document_refinement_1 = langfuse.get_prompt("document_refinement_1")
     document_refinement_2 = langfuse.get_prompt("document_refinement_2")
-    for code_id in code_list:
+    for code_id in tqdm(code_list):
         #print(code_id, 'processing...')
         indices_list, heading_list, whole_snippet = find_indices_and_snippet_with_code_id(code_id, state['final_documents'])
         if len(indices_list) < 2:
