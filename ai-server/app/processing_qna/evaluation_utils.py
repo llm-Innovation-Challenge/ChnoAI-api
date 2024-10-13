@@ -41,7 +41,7 @@ class EvaluationUtils:
         :param criteria: A single evaluation criteria to be added.
         """
         
-        response = self.database.table("messages_for_eval") \
+        response = self.database.table("messages") \
                     .select("sequence_number, message_type, message_content") \
                     .eq("conversation_id", conversation_id) \
                     .order("sequence_number", desc=False) \
