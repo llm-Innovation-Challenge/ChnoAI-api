@@ -205,7 +205,7 @@ def replace_code_snippets(document, snippets_dict):
         # 대체할 패턴을 정의
         pattern = f"<-- {snippet_key}:.*?-->"
         # document 내에서 해당 placeholder를 딕셔너리의 value로 대체
-        document = re.sub(pattern, "```" + snippets_dict[snippet_key] + "\n```\n", document)
+        document = re.sub(pattern, "```\n" + snippets_dict[snippet_key] + "\n```\n", document)
     
     return document
 
