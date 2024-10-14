@@ -118,7 +118,7 @@ def make_final_documents(state: GraphState):
             for i in range(10):
                 generated_doc, _ = write(model, qa, document)
                 updated_doc = remove_after_second_hashes(generated_doc.content)
-                if not ('[Q]' in updated_doc) and not ('```' in updated_doc):
+                if not ('[Q]' in updated_doc) and not ('[A]' in updated_doc) and not ('[Doc]' in updated_doc) and not ('[/Q]' in updated_doc) and not ('[/A]' in updated_doc) and not ('[/Doc]' in updated_doc) and not ('```' in updated_doc):
                     break
                 else:
                     pass
