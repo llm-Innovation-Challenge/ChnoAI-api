@@ -118,6 +118,7 @@ def create_app():
 
         # 2. 질문 압축 및 코드 추출
         processed_qna_list, code_documents = run_pipeline("solar-pro", conversation_id);
+        logging.info("message_to_index_dict (before preproc): %s", json.dumps(result[1], default=str))
 
         # 블로그 작성 모듈 이전에 목차 생성 모듈에서 나온 결과 전처리
         ## 목차 딕셔너리의 value 리스트 내에 있는 값들을 모두 문자열로 처리
@@ -132,6 +133,10 @@ def create_app():
 
         # 3. 블로그 작성
         ## 들어갈 graph_state를 정의
+        logging.info("preprocessed_conversations: %s", json.dumps(processed_qna_list, default=str))
+        logging.info("code_document: %s", json.dumps(processed_code_documents, default=str))
+        logging.info("message_to_index_dict (after preproc): %s", json.dumps(result[1], default=str))
+        logging.info("final_documents: %s", json.dumps(result[0], default=str))
         graph_state = GraphState(
             preprocessed_conversations=processed_qna_list,
             code_document=processed_code_documents,
@@ -155,6 +160,7 @@ def create_app():
 
         # 입력된 딕셔너리의 값들을 줄바꿈으로 연결하여 하나의 문자열로 만듭니다.
         final_technote = format_input(final_state["final_documents"]);
+        logging.info("규진 확인용:\n %s", json.dumps(final_technote, default=str))
         title = get_current_datetime()
 
 
