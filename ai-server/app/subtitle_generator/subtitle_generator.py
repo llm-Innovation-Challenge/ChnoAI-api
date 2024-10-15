@@ -79,7 +79,7 @@ class SubtitleGenerator():
 
         # Fill the reordered_subtitles based on the mapping
         for i, _ in enumerate(reordered_subtitles):
-            reordered_subtitles[i] = subtitle_list[number_map[i]]
+            reordered_subtitles[number_map[i]] = subtitle_list[i]
 
         return reordered_subtitles, renumbered_qa_lists
     
