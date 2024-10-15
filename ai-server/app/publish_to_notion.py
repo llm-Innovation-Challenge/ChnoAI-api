@@ -11,7 +11,7 @@ import re
 from flask import Blueprint, request, jsonify
 
 
-GPT_FORMATTER_ON = True;
+GPT_FORMATTER_ON = False;
 NOTION_TOKEN = os.getenv('NOTION_TOKEN')
 NOTION_DATABASE_ID = os.getenv('NOTION_DATABASE_ID')
 

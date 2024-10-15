@@ -10,6 +10,8 @@ from tqdm import tqdm
 from langchain_upstage import ChatUpstage
 from langchain_openai import ChatOpenAI
 from langchain_core.messages import HumanMessage
+from langchain_upstage import ChatUpstage, UpstageEmbeddings
+
 
 # langgraph
 from langgraph.checkpoint.memory import MemorySaver
@@ -26,6 +28,8 @@ from app.processing_qna.evaluate_score import evaluate_processed_answer, evaluat
 from app.type import CodeStorage, QA, QAProcessorGraphState as GraphState
 from app.constants import CONVERSATION_ID
 from app.processing_qna.processed_qna_db import ProcessedQnADBHandler
+from app.translator.translator import translate_q_and_a
+
 
 langfuse_handler = CallbackHandler()
 langfuse = Langfuse()
@@ -34,14 +38,17 @@ load_dotenv()
 openai_api_key = os.getenv("OPENAI_API_KEY")
 
 
+
 class QnAProcessor:
     """
     QnAProcessor 클래스는 Q&A 쌍을 처리하는 데 사용됩니다.
     이 클래스는 질문과 답변에서 코드 스니펫을 추출하고, 해당 코드를 LLM을 사용하여 설명으로 대체합니다.
+
     Attributes:
     - pair_list (List[QA]): 처리할 Q&A 쌍의 리스트.
     - model: LLM 모델 인스턴스.
     - code_documents (List[CodeStorage]): 각 Q&A 쌍에 대한 코드 문서 정보를 저장하는 리스트.
+
     Methods:
     - process_qna_pair(): Q&A 쌍을 처리하고 코드 스니펫을 설명으로 대체하며, 최종 Q&A 쌍과 코드 문서 리스트를 반환합니다.
     - extract_code_and_replace_with_description(qna_pair): 질문과 답변에서 코드를 추출하고 설명으로 대체합니다.
@@ -54,7 +61,7 @@ class QnAProcessor:
         self.qna_list = qna_list
         self.model = model
         self.code_documents: List[CodeStorage] = []
-
+    
     def process_qna_pair(self, graph_state:GraphState, MAX_ITERATION:int=3) -> Tuple[List[QA], List[CodeStorage]]:
         """Q&A 쌍을 처리하고 코드 스니펫을 설명으로 대체하며, 최종 Q&A 쌍과 코드 문서 리스트를 반환"""
         for qna_pair in tqdm(self.qna_list, desc="Processing Q&A Pairs", unit="pair"):
@@ -68,10 +75,10 @@ class QnAProcessor:
             for i in range(MAX_ITERATION):
                 summarized_question = self.summarize_question_with_llm(question)
                 coherence_result = evaluate_coherence(question, summarized_question)
-
+                
                 current_score  = coherence_result.get("coherence_score")
                 coherent_reason = coherence_result.get("reason")
-
+                
                 print(f"Iteration {i + 1}/{MAX_ITERATION}")
                 print(f"Coherent score: {current_score }")
                 print(f"Coherent reason: {coherent_reason}")
@@ -79,13 +86,13 @@ class QnAProcessor:
                 if current_score > coherent_score:
                     coherent_score = current_score
                     best_summarized_question = summarized_question 
-
+                
                 if coherent_score >= 0.8:
                     print("Coherent score 기준점을 넘음. 반복 종료.")
                     break
                 else:
                     print("Coherent score 기준점을 넘지 못하여 다시 summarize 실행 중...")
-
+            
             # coherent_score >= 0.8 이면 summarized_question 반영 
             graph_state["processing_data"]["q"] = best_summarized_question
 
@@ -95,7 +102,7 @@ class QnAProcessor:
             for i in range(MAX_ITERATION):
                 processed_answer = self.backtick_process_with_llm(answer)
                 evaluation_results = evaluate_processed_answer(answer, processed_answer)
-
+                
                 current_recall_score = evaluation_results.get("recall")
                 print(f"Iteration {i + 1}/{MAX_ITERATION}")
                 print(f"Recall score: {current_recall_score}")
@@ -103,7 +110,7 @@ class QnAProcessor:
                 if current_recall_score > recall_score:
                     recall_score = current_recall_score
                     best_processed_answer = processed_answer  
-
+                
                 if recall_score >= 0.90:
                     print("Recall score 기준점을 넘음. 반복 종료.")
                     break
@@ -111,7 +118,7 @@ class QnAProcessor:
                     print("Recall score 기준점을 넘지 못하여 다시 backtick 처리 실행 중...")
 
             graph_state["processing_data"]["a"] = best_processed_answer
-
+            
             question_without_code, answer_without_code = self.extract_code_and_replace_with_description(summarized_question, processed_answer)            
             graph_state["code_documents"] = self.code_documents
             qna_pair["q"] = question_without_code
@@ -121,8 +128,8 @@ class QnAProcessor:
             graph_state["processed_conversations"].append(qna_pair)
 
         return self.qna_list, self.code_documents
-
-
+    
+    
     def extract_code_and_replace_with_description(self, question:str, answer:str, description_prefix="Code_Snippet") -> Tuple[str, str]:
         """질문과 답변에서 코드 스니펫을 추출하고 설명으로 대체"""
 
@@ -136,7 +143,7 @@ class QnAProcessor:
             code_description = self.describe_code_with_llm(code_snippet=code_snippet)
             code_index_counter +=1
             code_index = f"{description_prefix}_{code_index_counter}"
-
+            
             placeholder = f"{code_index}: {code_description}"
 
             # 코드 저장
@@ -152,7 +159,7 @@ class QnAProcessor:
         question_without_code = re.sub(code_pattern, _replace_code_with_placeholder, question, flags=re.DOTALL)
         answer_without_code = re.sub(code_pattern, _replace_code_with_placeholder, answer, flags=re.DOTALL)
         return question_without_code, answer_without_code
-
+    
     def backtick_process_with_llm(self, answer):
         """LLM을 사용하여 코드에 백틱 추가."""
         backtick_processor: Annotated[str, HumanMessage] = langfuse.get_prompt("backtick_processor")
@@ -167,8 +174,8 @@ class QnAProcessor:
         prompt = short_code_description.compile(code_snippet=code_snippet)
         response = self.model.invoke(prompt)
         return response.content.strip()
-
-
+    
+    
     def summarize_question_with_llm(self, question):
         """LLM을 사용하여 질문 요약."""
         question_summarizer: Annotated[str, HumanMessage] = langfuse.get_prompt("question_summarizer")
@@ -190,9 +197,14 @@ def run_pipeline(model_name, conversation_id) :
 
     evaulation_utils = EvaluationUtils()
     conversation_data = evaulation_utils.get_messages_by_conversation_id(conversation_id)
-    qna_processor = QnAProcessor(conversation_data, model)
+    print("conversation data:", conversation_data)
+    passage_embeddings = UpstageEmbeddings(model="solar-embedding-1-large-passage")
+    translated_conversation_data = translate_q_and_a(conversation_data, "solar-1-mini-translate-koen", passage_embeddings)    
+    
+    print("Translated conversation data:", translated_conversation_data)
+    qna_processor = QnAProcessor(translated_conversation_data, model)
     init_graph_state = GraphState(
-        not_processed_conversations=conversation_data,
+        not_processed_conversations=translated_conversation_data,
         processing_data=None,
         processed_conversations=[],
         code_documents=[]

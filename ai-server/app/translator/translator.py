@@ -1,15 +1,16 @@
 
 import os
 import requests
+import numpy as np
 from dotenv import load_dotenv
+from typing import List
+
+
 from langfuse import Langfuse
 from langfuse.callback import CallbackHandler
-from langchain_upstage import ChatUpstage, UpstageEmbeddings
-from langchain_core.messages import HumanMessage
-from typing import List, TypedDict, Annotated
-import numpy as np
-from evaluation_utils import EvaluationUtils
+from langchain_upstage import UpstageEmbeddings
 
+from app.processing_qna.evaluation_utils import EvaluationUtils
 from app.type import QA
 
 load_dotenv()
@@ -17,26 +18,55 @@ load_dotenv()
 # Initialize Langfuse and models
 langfuse_handler = CallbackHandler()
 langfuse = Langfuse()
-model = ChatUpstage(model="solar-pro")
+
 passage_embeddings = UpstageEmbeddings(model="solar-embedding-1-large-passage")
 evaluation_utils = EvaluationUtils()
 
 API_URL = "https://api.upstage.ai/v1/solar/chat/completions"
 HEADERS = {"Authorization": f"Bearer {os.getenv('UPSTAGE_API_KEY')}"}
 
+
+# 텍스트에 한국어가 포함되어 있는지 확인하는 함수
 def contains_korean(text: str) -> bool:
+    """
+    주어진 텍스트에 한국어가 포함되어 있는지 확인하는 함수.
+
+    Args:
+        text (str): 검사할 문자열.
+
+    Returns:
+        bool: 한국어가 포함되어 있으면 True, 그렇지 않으면 False.
+    """
     return any('가' <= char <= '힣' for char in text)
 
-def embed_text(text: str, embedding_model):
-    return embedding_model.embed_documents([text])
-
+# 두 개의 임베딩 벡터 간 유사도를 계산하는 함수
 def calculate_similarity(embedded_query, embedded_documents):
+    """
+    쿼리 임베딩과 문서 임베딩 간의 유사성을 계산하는 함수.
+
+    Args:
+        embedded_query (np.array): 쿼리 임베딩.
+        embedded_documents (np.array): 문서 임베딩.
+
+    Returns:
+        np.array: 쿼리와 문서 간의 유사도 점수.
+    """
     embedded_query = np.array(embedded_query)
     embedded_documents = np.array(embedded_documents)
     similarity = np.dot(embedded_query, embedded_documents.T)
     return np.squeeze(similarity)
 
 def translate_text_with_api(text: str, model: str) -> str:
+    """
+    Solar-API를 사용하여 주어진 텍스트를 영어로 번역하는 함수.
+
+    Args:
+        text (str): 번역할 텍스트.
+        model (str): 사용할 번역 모델.
+
+    Returns:
+        str: 번역된 텍스트.
+    """
 
     data = {
         "model": model,
@@ -52,60 +82,100 @@ def translate_text_with_api(text: str, model: str) -> str:
         print(f"Translation API error: {response.status_code}, {response.text}")
         return text
 
+
+# Q&A 형식 대화를 번역하는 함수
 def translate_q_and_a(conversation_list: List[QA], translation_model: str, passage_embeddings):
-    translated_conversations = []
+    """
+    주어진 Q&A 목록을 번역하는 함수.
     
+    Solar-LLM :
+    1. 임베딩 모델을 사용하여 원본 텍스트와 번역된 텍스트 간의 유사도 계산합니다.
+    2. 번역 모델을 사용하여 한글 텍스트를 영어로 번역합니다.
+    - 사용 모델명 : solar-embedding-1-large-passage, solar-1-mini-translate-koen
+
+    Args:
+        conversation_list (list[QA]): 번역할 Q&A 목록.
+        translation_model (str): 사용할 번역 모델.
+
+    Returns:
+        list[QA]: 번역된 Q&A 목록.
+    """
+
+    translated_conversations = []
+
+    def translate_if_needed(text: str) -> str:
+        """
+        텍스트에 한국어가 포함되어 있다면 번역하고, 유사도를 계산한 후 결과를 반환하는 함수.
+        한국어가 없다면 원본을 반환.
+        """
+        if not contains_korean(text):
+            return text
+
+        attempts = 0
+        similarity = 0.0
+        translated_text = text
+
+        while (similarity < 0.5 or contains_korean(translated_text)) and attempts < 5:
+            translated_text = translate_text_with_api(text, translation_model)
+            embedded_original = passage_embeddings.embed_documents([text])
+            embedded_translated = passage_embeddings.embed_documents([translated_text])
+            similarity = calculate_similarity(embedded_original, embedded_translated)
+            attempts += 1
+
+        if attempts == 5:
+            print(f"최대 재시도 횟수 도달. 최종 번역: {translated_text}")
+
+        return translated_text
+
+    # 대화 리스트에서 질문과 답변 각각 번역 처리
     for conversation in conversation_list:
-        question = conversation['q']
-        answer = conversation['a']
+        translated_q = translate_if_needed(conversation['q'])  
+        translated_a = translate_if_needed(conversation['a'])  
 
-        # Translate the question if it contains Korean
-        if contains_korean(question):
-            attempts = 0  
-            similarity_q = 0.0
-            translated_q = question
-
-            while (similarity_q < 0.5 or contains_korean(translated_q)) and attempts < 5:
-                translated_q = translate_text_with_api(question, translation_model)
-
-                # Calculate similarity between original and translated question
-                embedded_query = passage_embeddings.embed_documents([question])
-                embedded_translated_q = passage_embeddings.embed_documents([translated_q])
-                similarity_q = calculate_similarity(embedded_query, embedded_translated_q)
-                #print(f"질문 번역 유사도 (시도 {attempts + 1}): {similarity_q:.4f}")
-                #print(f"질문 번역에 한국어 포함 여부: {contains_korean(translated_q)}")
-                attempts += 1
-
-            if attempts == 5:
-                print(f"최대 재시도 횟수 도달. 질문 최종 번역: {translated_q}")
-        else:
-            translated_q = question  # If the question is already in English, no translation needed
-
-        # Translate the answer if it contains Korean
-        if contains_korean(answer):
-            attempts = 0 
-            similarity_a = 0.0
-            translated_a = answer
-
-            while (similarity_a < 0.5 or contains_korean(translated_a)) and attempts < 5:
-                translated_a = translate_text_with_api(answer, translation_model)
-
-                # Calculate similarity between original and translated answer
-                embedded_answer = passage_embeddings.embed_documents([answer])
-                embedded_translated_a = passage_embeddings.embed_documents([translated_a])
-                similarity_a = calculate_similarity(embedded_answer, embedded_translated_a)
-                #print(f"답변 번역 유사도 (시도 {attempts + 1}): {similarity_a:.4f}")
-                #print(f"답변 번역에 한국어 포함 여부: {contains_korean(translated_a)}")
-                attempts += 1
-
-            if attempts == 5:
-                print(f"최대 재시도 횟수 도달. 답변 최종 번역: {translated_a}")
-        else:
-            translated_a = answer  # If the answer is already in English, no translation needed
-
+        # 번역된 질문과 답변을 Q&A 형식으로 리스트에 추가
         translated_conversations.append(QA(q=translated_q, a=translated_a))
 
     return translated_conversations
+
+
+#conversation 변역 위한 함수
+def process_message(conversation, translation_model, passage_embeddings):
+    """
+    대화(conversation)에서 각 메시지를 번역하고, 번역된 메시지를 반환하는 함수.
+    
+    Solar-LLM :
+    1. 임베딩 모델을 사용하여 원본 텍스트와 번역된 텍스트 간의 유사도 계산합니다.
+    2. 번역 모델을 사용하여 한글 텍스트를 영어로 번역합니다.
+    - 사용 모델명 : solar-embedding-1-large-passage, solar-1-mini-translate-koen
+        
+    Args:
+        conversation (list): 대화 내용이 담긴 리스트.
+        translation_model (str): solar-1-mini-translate-koen
+        passage_embeddings (UpstageEmbeddings) :  solar-embedding-1-large-passage
+
+    Returns:
+        list: 번역된 대화 리스트.
+    """
+    def translate_if_korean(text: str, translation_model: str) -> str:
+        return translate_text_with_api(text, translation_model) if contains_korean(text) else text
+
+    translated_conversations = []
+
+    # 각 질문과 답변에 대해 처리
+    for conversation_pair in conversation:
+        question = conversation_pair['message_content']
+        translated_q = translate_if_korean(question, translation_model)
+        
+        # 답변 번역
+        answer = conversation_pair['message_content']
+        translated_a = translate_if_korean(answer, translation_model)
+
+        translated_conversations.append({"message_content": translated_q})
+        translated_conversations.append({"message_content": translated_a})
+
+    return translated_conversations
+
+
 
 if __name__ == "__main__":
     EXAMPLE1_CONVERSATION_ID = 162

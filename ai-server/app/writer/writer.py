@@ -199,6 +199,7 @@ def document_refinement(state: GraphState):
 
 ######################작성한 블로그의 코드 스니펫을 원래 코드로 교체 및 헤딩 표시(#) 지우기######################
 
+
 def replace_code_snippets(document, snippets_dict):
     # Code_Snippet_1 및 Code_Snippet_2 키를 사용해 대체할 패턴을 찾음
     for snippet_key in snippets_dict:
@@ -218,6 +219,7 @@ def make_blog(state: GraphState):
         state['final_documents'][index] = t
         #print(t, end='\n\n')
     return state
+
 
 ######################작성한 블로그의 코드 스니펫을 원래 코드로 교체 및 헤딩 표시(#) 지우기######################
 

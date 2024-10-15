@@ -11,11 +11,14 @@ from app.utils import fetch_messages
 import logging
 import json
 logging.basicConfig(level=logging.INFO, format='%(asctime)s - %(levelname)s - %(message)s')
+
+from langchain_upstage import  UpstageEmbeddings
 from app.subtitle_generator.subtitle_generator import SubtitleGenerator
 from app.processing_qna.qna_processor import run_pipeline
 from app.processing_qna.processed_qna_db import ProcessedQnADBHandler
 from app.writer.writer import compiled_graph, GraphState
 from datetime import datetime
+from app.translator.translator import process_message
 
 # 블루프린트 등록
 from .categorize_questions import categorize_questions_bp
@@ -110,10 +113,18 @@ def create_app():
     def generate_blog2():
         data = request.json
         conversation_id = data.get('conversation_id')
+        
         messages = fetch_messages(database, conversation_id)
+
+
+        # 0. 한국어가 입력되었을떄 번역
+        passage_embeddings = UpstageEmbeddings(model="solar-embedding-1-large-passage")
+        translated_messages = process_message(messages, "solar-1-mini-translate-koen", passage_embeddings)
+    
         # 1. 목차 생성
         generatorClass = SubtitleGenerator(config_path = "app/configs/subtitle_generator.yaml");
-        result = generatorClass(messages)
+        
+        result = generatorClass(translated_messages)
 
 
         # 2. 질문 압축 및 코드 추출
