@@ -1,20 +1,20 @@
 from supabase import Client
-from typing import List
-from db_client import get_db_client
-from type import CodeStorage, QA
+from app.db_client import get_db_client
+from app.type import CodeStorage, QA
+from app.utils import format_extracted_code
 
 class ProcessedQnADBHandler:
     def __init__(self):
         self.database: Client = get_db_client()  
 
     # Q&A 데이터를 'processed_qna' 테이블에 삽입하는 메서드
-    def insert_processed_qna(self, conversation_id: int, model:str, processed_content: List[QA]):
+    def insert_processed_qna(self, conversation_id: int, model:str, processed_content: list[QA]):
         """
         processed_qna_pairs 데이터를 processed_qna 테이블에 삽입하는 메서드.
 
         Args:
             convesation_id (int): 삽입할 데이터가 속한 대화의 ID
-            processed_content (List[QA]): Q&A 쌍 데이터를 포함하는 리스트
+            processed_content (list[QA]): Q&A 쌍 데이터를 포함하는 리스트
 
         Returns:
             Response: 삽입 결과를 담은 응답 객체
@@ -33,14 +33,14 @@ class ProcessedQnADBHandler:
             return None
 
     # 추출된 코드 데이터를 'extracted_code' 테이블에 삽입하는 메서드
-    def insert_extracted_code(self, conversation_id: int, model:str, processed_qna_id: int, code_document: List[CodeStorage]):
+    def insert_extracted_code(self, conversation_id: int, model:str, processed_qna_id: int, code_document: list[CodeStorage]):
         """
         추출된 코드 데이터를 extracted_code 테이블에 삽입하는 메서드.
 
         Args:
             conversation_id (int): 대화의 ID
             processed_qna_id (int): 관련된 Q&A 데이터의 ID
-            code_document (List[CodeStorage]): 코드 문서 데이터를 포함하는 리스트
+            code_document (list[CodeStorage]): 코드 문서 데이터를 포함하는 리스트
 
         Returns:
             Response: 삽입 결과를 담은 응답 객체
@@ -57,14 +57,14 @@ class ProcessedQnADBHandler:
             print(f"Internal server error: {str(e)}")
             return None
         
-    def insert_qna_and_code(self, conversation_id: int, model:str, processed_content: List[QA], code_document: List[CodeStorage]):
+    def insert_qna_and_code(self, conversation_id: int, model:str, processed_content: list[QA], code_document: list[CodeStorage]):
         """
         processed_qna 테이블에 Q&A 데이터를 삽입하고, 해당 ID를 사용해 extracted_code 테이블에 코드 데이터를 삽입하는 메서드.
 
         Args:
             conversation_id (int): 대화의 ID
-            processed_content (List[QA]): Q&A 쌍 데이터를 포함하는 리스트
-            code_document (List[CodeStorage]): 코드 문서 데이터를 포함하는 리스트
+            processed_content (list[QA]): Q&A 쌍 데이터를 포함하는 리스트
+            code_document (list[CodeStorage]): 코드 문서 데이터를 포함하는 리스트
 
         Returns:
             bool: 두 테이블에 모두 성공적으로 삽입되었는지 여부
@@ -124,16 +124,11 @@ class ProcessedQnADBHandler:
             if not extracted_code:
                 raise Exception(f"No extracted code found for conversation {conversation_id}")
             
-            code_document = self._format_extracted_code(items=extracted_code[0]["code_document"])
+            code_document = format_extracted_code(items=extracted_code[0]["code_document"])
 
         except Exception as e:
             print(f"Internal server error: {str(e)}") 
 
         # Q&A와 코드 문서 반환 (값이 없을 경우 None 반환)
         return processed_qna_conversation, code_document
-
-    
-    def _format_extracted_code(self, items):
-        result_dict = {item['code_index']: item['code_snippet'] for item in items}
-        return result_dict
 

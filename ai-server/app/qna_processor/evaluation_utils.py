@@ -1,14 +1,16 @@
 
-from db_client import get_db_client
+from app.db_client import get_db_client
+from app.constants import CONVERSATION_ID
+from app.utils import format_message
 #################################################################
 # example1
-EXAMPLE1_CONVERSATION_ID = 146
+EXAMPLE1_CONVERSATION_ID = CONVERSATION_ID["EXAMPLE_1_KOR"]
 
 # example5
-EXAMPLE5_CONVERSATION_ID = 162
+EXAMPLE5_CONVERSATION_ID = CONVERSATION_ID["EXAMPLE_2_KOR"]
 
 # example6
-EXAMPLE6_CONVERSATION_ID = 153
+EXAMPLE6_CONVERSATION_ID = CONVERSATION_ID["EXAMPLE_6_KOR"]
 #################################################################
 
 
@@ -16,22 +18,6 @@ EXAMPLE6_CONVERSATION_ID = 153
 class EvaluationUtils:
   def __init__(self) -> None:
       self.database = get_db_client()
-
-  def format_messages(self, messages):
-    """
-    get_messages_by_conversation_id의 결과를 포맷팅합니다.
-    
-    :param messages: get_messages_by_conversation_id의 결과
-    """
-    formatted_messages = []
-    # 두 번씩 반복하며 q, a를 순서대로 가져옴
-    for i in range(0, len(messages), 2):
-      formatted_messages.append({
-        "q": messages[i]["message_content"],
-        "a": messages[i+1]["message_content"],
-      })
-    return formatted_messages
-
 
   # conversation_id값을 통해 해당 대화의 메시지를 가져옴
   def get_messages_by_conversation_id(self, conversation_id: int):
@@ -41,13 +27,13 @@ class EvaluationUtils:
         :param criteria: A single evaluation criteria to be added.
         """
         
-        response = self.database.table("messages") \
+        response = self.database.table("messages_for_eval") \
                     .select("sequence_number, message_type, message_content") \
                     .eq("conversation_id", conversation_id) \
                     .order("sequence_number", desc=False) \
                     .execute()
         messages = response.data
-        formatted_messages = self.format_messages(messages)
+        formatted_messages = format_message(messages)
         return formatted_messages
   
 
