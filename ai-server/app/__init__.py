@@ -16,6 +16,7 @@ from app.processing_qna.qna_processor import run_pipeline
 from app.processing_qna.processed_qna_db import ProcessedQnADBHandler
 from app.writer.writer import compiled_graph, GraphState
 from datetime import datetime
+import re
 
 # 블루프린트 등록
 from .categorize_questions import categorize_questions_bp
@@ -146,13 +147,15 @@ def create_app():
                 "configurable": {"thread_id": 42}, 
                 "callbacks": [langfuse_handler]}
         )
-
+        
         ###################규진 결과물 출력######################
         # json.dumps를 사용하여 객체를 문자열로 변환, string만 출력이 가능합니다.
         logging.info("final_state: %s", json.dumps(final_state["final_documents"], default=str))
         #########################################
 
-
+        # 작성된 내용에서 ## 이후의 숫자를 1씩 더합니다.
+        final_state["final_documents"] = {k: re.sub(r'(\d+)', lambda x: str(int(x.group()) + 1), v) for k, v in final_state["final_documents"].items()}
+        
         # 입력된 딕셔너리의 값들을 줄바꿈으로 연결하여 하나의 문자열로 만듭니다.
         final_technote = format_input(final_state["final_documents"]);
         title = get_current_datetime()
