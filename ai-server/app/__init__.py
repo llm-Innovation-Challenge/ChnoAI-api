@@ -16,6 +16,7 @@ from app.processing_qna.qna_processor import run_pipeline
 from app.processing_qna.processed_qna_db import ProcessedQnADBHandler
 from app.writer.writer import compiled_graph, GraphState
 from datetime import datetime
+import re
 
 # 블루프린트 등록
 from .categorize_questions import categorize_questions_bp
@@ -118,7 +119,6 @@ def create_app():
 
         # 2. 질문 압축 및 코드 추출
         processed_qna_list, code_documents = run_pipeline("solar-pro", conversation_id);
-        logging.info("message_to_index_dict (before preproc): %s", json.dumps(result[1], default=str))
 
         # 블로그 작성 모듈 이전에 목차 생성 모듈에서 나온 결과 전처리
         ## 목차 딕셔너리의 value 리스트 내에 있는 값들을 모두 문자열로 처리
@@ -133,10 +133,6 @@ def create_app():
 
         # 3. 블로그 작성
         ## 들어갈 graph_state를 정의
-        logging.info("preprocessed_conversations: %s", json.dumps(processed_qna_list, default=str))
-        logging.info("code_document: %s", json.dumps(processed_code_documents, default=str))
-        logging.info("message_to_index_dict (after preproc): %s", json.dumps(result[1], default=str))
-        logging.info("final_documents: %s", json.dumps(result[0], default=str))
         graph_state = GraphState(
             preprocessed_conversations=processed_qna_list,
             code_document=processed_code_documents,
@@ -151,16 +147,17 @@ def create_app():
                 "configurable": {"thread_id": 42}, 
                 "callbacks": [langfuse_handler]}
         )
-
+        
         ###################규진 결과물 출력######################
         # json.dumps를 사용하여 객체를 문자열로 변환, string만 출력이 가능합니다.
         logging.info("final_state: %s", json.dumps(final_state["final_documents"], default=str))
         #########################################
 
-
+        # 작성된 내용에서 ## 이후의 숫자를 1씩 더합니다.
+        final_state["final_documents"] = {k: re.sub(r'(\d+)', lambda x: str(int(x.group()) + 1), v) for k, v in final_state["final_documents"].items()}
+        
         # 입력된 딕셔너리의 값들을 줄바꿈으로 연결하여 하나의 문자열로 만듭니다.
         final_technote = format_input(final_state["final_documents"]);
-        logging.info("규진 확인용:\n %s", json.dumps(final_technote, default=str))
         title = get_current_datetime()
 
 
