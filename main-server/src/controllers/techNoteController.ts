@@ -298,7 +298,7 @@ exports.createNotionPage = async (req: Request, res: Response) => {
       process.env.NODE_ENV === "development" ? "ai-server-dev" : "ai-server";
 
     const result = await axios
-      .post(`http://${aiServerContainerName}:4000/generate-blog2`, {
+      .post(`http://${aiServerContainerName}:4000/generate-blog`, {
         conversation_id: conversation_id,
       })
       .then((response) => {

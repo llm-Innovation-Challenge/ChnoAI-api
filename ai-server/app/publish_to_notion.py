@@ -1,17 +1,15 @@
 import os
 import requests
 from dotenv import load_dotenv
-# .env 파일의 환경 변수 로드
-load_dotenv()
-from openai import OpenAI
-client = OpenAI()
-import json
-import re
 
+from openai import OpenAI
+import json
 from flask import Blueprint, request, jsonify
 
+# .env 파일의 환경 변수 로드
+load_dotenv()
 
-GPT_FORMATTER_ON = True;
+GPT_FORMATTER_ON = True
 NOTION_TOKEN = os.getenv('NOTION_TOKEN')
 NOTION_DATABASE_ID = os.getenv('NOTION_DATABASE_ID')
 
@@ -99,6 +97,8 @@ def markdown_to_notion_blocks(content):
     return blocks
 
 def format_content(content):
+    client = OpenAI()
+
     try:
         prompt = f"""
         Review the following blog drafts and combine them into a single cohesive and polished blog post. Ensure that the final content flows well, maintains a consistent tone, and covers all the points mentioned in the drafts. Format the content using Markdown and code blocks as necessary to ensure it renders well on Notion. Keep in mind that this post is likely about implementing a specific feature, fixing a bug, or explaining a concept, rather than covering the entire project. The author is a developer aiming to document and share knowledge and insights gained during the development process.
@@ -129,10 +129,8 @@ def format_content(content):
         title = json_result.get("title", "No Title Found")
         content = json_result.get("content", "No Content Found").strip()
 
-        
-
     except Exception as e:
-        print("")
+        print(str(e))
 
     return title, content
 
@@ -198,7 +196,8 @@ def publish_to_notion():
         if (os_tags.__len__() == 0 and framework_tags.__len__() == 0 and language_tags.__len__() == 0 and tech_stack_tags.__len__() == 0):
             formatted_title, formatted_content =  format_content(content) if GPT_FORMATTER_ON else (title, content)
     except Exception as e:
-        print("")
+        print(str(e))
+        
     if not formatted_title or not formatted_content:
         return jsonify({"error": "Title and content are required"}), 400
 

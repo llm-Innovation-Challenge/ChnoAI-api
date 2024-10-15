@@ -1,20 +1,18 @@
 # from langchain import LangChain
 from openai import OpenAI
-client = OpenAI()
 from dotenv import load_dotenv
 import os
 import json
+from flask import Blueprint, request, jsonify
+
+client = OpenAI()
 
 # .env 파일의 환경 변수 로드
 load_dotenv()
 
-# 환경 변수에서 API 키 가져오기
-openai_api_key = os.getenv('OPENAI_API_KEY')
-
 # OpenAI API 키 설정
+openai_api_key = os.getenv('OPENAI_API_KEY')
 client.api_key = openai_api_key
-
-from flask import Blueprint, request, jsonify
 
 summarize_answers_bp = Blueprint('summarize_answers', __name__)
 
