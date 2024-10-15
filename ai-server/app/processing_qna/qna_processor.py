@@ -19,11 +19,12 @@ from langgraph.prebuilt import ToolNode
 # langfuse
 from langfuse import Langfuse
 from langfuse.callback import CallbackHandler
+from langchain_upstage import ChatUpstage, UpstageEmbeddings
 
 # 평가 함수 불러오기
 from app.processing_qna.evaluation_utils import EvaluationUtils
 from app.processing_qna.evaluate_score import evaluate_processed_answer, evaluate_coherence  
-
+from app.translator.translator import translate_q_and_a
 from app.type import CodeStorage, QA, QAProcessorGraphState as GraphState
 from app.constants import CONVERSATION_ID
 from app.processing_qna.processed_qna_db import ProcessedQnADBHandler
@@ -193,8 +194,10 @@ def run_pipeline(model_name, conversation_id) :
 
     evaulation_utils = EvaluationUtils()
     conversation_data = evaulation_utils.get_messages_by_conversation_id(conversation_id)
+    passage_embeddings = UpstageEmbeddings(model="solar-embedding-1-large-passage")
+    translated_result = translate_q_and_a(conversation_data, "solar-1-mini-translate-koen", passage_embeddings)
     qna_processor = QnAProcessor(conversation_data, model)
-
+    
     init_graph_state = GraphState(
         not_processed_conversations=conversation_data,
         processing_data=None,
