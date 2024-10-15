@@ -77,7 +77,7 @@ def translate_q_and_a(conversation_list: List[QA], translation_model: str, passa
                 attempts += 1
 
             if attempts == 5:
-                #print(f"최대 재시도 횟수 도달. 질문 최종 번역: {translated_q}")
+                print(f"최대 재시도 횟수 도달. 질문 최종 번역: {translated_q}")
         else:
             translated_q = question  # If the question is already in English, no translation needed
 
@@ -99,7 +99,7 @@ def translate_q_and_a(conversation_list: List[QA], translation_model: str, passa
                 attempts += 1
 
             if attempts == 5:
-                #print(f"최대 재시도 횟수 도달. 답변 최종 번역: {translated_a}")
+                print(f"최대 재시도 횟수 도달. 답변 최종 번역: {translated_a}")
         else:
             translated_a = answer  # If the answer is already in English, no translation needed
 
