@@ -25,7 +25,7 @@ def create_app():
     app.register_blueprint(draft_explanation_blog_bp, url_prefix='/')
     app.register_blueprint(review_and_finalize_blog_bp, url_prefix='/')
     app.register_blueprint(publish_to_notion_bp, url_prefix='/')
-    
+
     return app
 
 if __name__ == '__main__':

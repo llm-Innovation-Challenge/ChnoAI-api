@@ -74,7 +74,7 @@ class QnAProcessor:
                 
                 current_score = coherence_result.get("coherence_score")
                 coherent_reason = coherence_result.get("reason")
-                
+
                 print(f"Iteration {i + 1}/{MAX_ITERATION}")
                 print(f"Coherent score: {current_score}")
                 print(f"Coherent reason: {coherent_reason}")
@@ -100,7 +100,7 @@ class QnAProcessor:
                 # 답변을 백틱 처리합니다.
                 processed_answer = self.backtick_process_with_llm(answer)
                 evaluation_results = evaluate_processed_answer(answer, processed_answer)
-                
+
                 current_recall_score = evaluation_results.get("recall")
                 print(f"Iteration {i + 1}/{MAX_ITERATION}")
                 print(f"Recall score: {current_recall_score}")
@@ -155,7 +155,7 @@ class QnAProcessor:
             code_description = self.describe_code_with_llm(code_snippet=code_snippet)
             code_index_counter += 1
             code_index = f"{description_prefix}_{code_index_counter}"
-            
+
             placeholder = f"{code_index}: {code_description}"
 
             # 코드 저장
@@ -233,7 +233,6 @@ def run_processor_qna(conversation_data: list[QA], model_name="solar-pro") :
     model = ChatUpstage(model=model_name)
 
     qna_processor = QnAProcessor(conversation_data, model)
-
     init_graph_state = GraphState(
         not_processed_conversations=conversation_data,
         processing_data=None,
