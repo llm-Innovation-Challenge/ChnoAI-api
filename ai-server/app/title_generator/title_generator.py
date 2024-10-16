@@ -36,8 +36,6 @@ class TitleGenerator():
     def __init__(self, config_path="title_generator.yaml"):
         # YAML 파일에서 설정 로드
 
-        full_path = os.path.abspath(config_path)
-        print ('full_path:', full_path)
         if os.path.exists(config_path):
             with open(config_path, 'r') as file:
                 config = yaml.safe_load(file)
@@ -62,9 +60,12 @@ class TitleGenerator():
         Returns:
             str: 전체 post에 대한 title을 string 형태로 return합니다.
         '''
-        subtitle_generation: Annotated[str, HumanMessage] = langfuse.get_prompt("title_generator")
-        prompt = subtitle_generation.compile(subtitle_string=subtitle_string)
+        title_generation: Annotated[str, HumanMessage] = langfuse.get_prompt("title_generator")
+        prompt = title_generation.compile(subtitle_string=subtitle_string)
         response = self.model.invoke(prompt)
+
+        if self.debug:
+            print('prompt integrated input:\n', prompt)
         return response.content.strip()
     
     def _dict_to_str(self, subtitle_dict:dict) -> str:
@@ -74,6 +75,9 @@ class TitleGenerator():
         result = ''
         for _, value in subtitle_dict.items():
             result += f'{value[3:]}\n'
+
+        if self.debug:
+            print('input:', result)
         return result
 
     
