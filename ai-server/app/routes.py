@@ -8,9 +8,10 @@ from supabase import  Client
 from langfuse.callback import CallbackHandler
 
 from app.db_client import get_db_client
-from app.utils import fetch_messages, format_message, get_current_datetime, format_input, format_extracted_code
+from app.utils import fetch_messages, format_message, format_input, format_extracted_code
 from app.type import WriterGraphState
 from app.subtitle_generator.subtitle_generator import SubtitleGenerator
+from app.title_generator.title_generator import TitleGenerator
 from app.qna_processor.qna_processor import run_processor_qna
 from app.writer.writer import compiled_graph
 from app.process_url import run_headless_browser
@@ -68,7 +69,9 @@ def generate_blog():
     3. qna_processor 모듈을 사용하여 질문을 요약하고, GPT의 답변에서 코드를 추출하며, 
        해당 코드에 대한 설명을 생성합니다.
        - 사용 모델명: solar-pro
-    4. writer 모듈을 사용하여 최종 블로그 콘텐츠를 작성합니다.
+    4. title_generator 모듈을 사용하여 노션 페이지의 제목을 생성합니다.
+       - 사용 모델명: solar-pro
+    5. writer 모듈을 사용하여 최종 블로그 콘텐츠를 작성합니다.
        - 사용 모델명 : solar-pro
 
     요청 예시:
@@ -100,7 +103,11 @@ def generate_blog():
     # 블로그 작성 모듈 이전에 질문 압축 및 코드 추출 모듈에서 나온 결과 전처리
     processed_code_documents = format_extracted_code(code_documents)
 
-    # 3. 블로그 작성 (writer 모듈)
+    # 3. 블로그 제목 생성 (title_generator 모듈)
+    title_generator = TitleGenerator(config_path="app/configs/title_generator.yaml")
+    title = title_generator(subtitle_docs[1])
+
+    # 4. 블로그 작성 (writer 모듈)
     ## 들어갈 graph_state를 정의
     graph_state = WriterGraphState(
         preprocessed_conversations=processed_qna_list,
@@ -126,9 +133,8 @@ def generate_blog():
 
     # 입력된 딕셔너리의 값들을 줄바꿈으로 연결하여 하나의 문자열로 만듭니다.
     final_technote = format_input(final_state["final_documents"])
-    title = get_current_datetime()
 
-    # 6. 노션 페이지 생성 및 게시
+    # 5. 노션 페이지 생성 및 게시
     notion_title = title
     notion_content = final_technote
     question_type = []
