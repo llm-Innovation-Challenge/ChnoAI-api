@@ -2,7 +2,6 @@ import os
 import yaml
 import logging
 
-from tqdm import tqdm
 from dotenv import load_dotenv
 
 # langchain
@@ -68,12 +67,12 @@ class TitleGenerator():
         response = self.model.invoke(prompt)
         return response.content.strip()
     
-    def _dict_to_str(self, subtitle_dict):
+    def _dict_to_str(self, subtitle_dict:dict) -> str:
         '''
         SubtitleGenerator module에서 생성한 dict를 LLM에게 feed할 수 있는 string 형태로 변환합니다.
         '''
         result = ''
-        for key, value in subtitle_dict.items():
+        for _, value in subtitle_dict.items():
             result += f'{value[3:]}\n'
         return result
 
@@ -92,12 +91,3 @@ class TitleGenerator():
         subtitle_string = self._dict_to_str(subtitle_dict)
         title = self.generate(subtitle_string)
         return title
-
-# 디버깅 목적의 데모
-if __name__ == '__main__':
-    print('current path:', os.getcwd())
-    example_dict = {"0": "## 0) Mastering Connection Retry Strategies for Popular Databases: MySQL, PostgreSQL, and MongoDB", "1": "## 1) Integrating MongoDB Database Connectivity into Your Project", "2": "## 2) Tackling PostgreSQL Connection Timeouts: A Practical Guide with Code Examples", "3": "## 3) Code-Driven Guide to Connecting to MySQL and PostgreSQL: Examples and Best Practices"}
-    print(os.getcwd())
-    test = TitleGenerator(config_path="../configs/title_generator.yaml")
-    result = test(example_dict)
-    print (result)
