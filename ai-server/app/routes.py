@@ -89,7 +89,7 @@ def generate_blog():
     conversation_data = format_message(messages)
 
     # 1. 한글 대화 텍스트 영어로 번역 (translator 모듈)
-    translated_conversation_data = translate_q_and_a(conversation_data, "solar-1-mini-translate-koen")
+    translated_conversation_data = translate_q_and_a(conversation_data)
     
     # 2. 목차 생성 (subtitle_generator 모듈)
     subtitle_generator = SubtitleGenerator(config_path = "app/configs/subtitle_generator.yaml")

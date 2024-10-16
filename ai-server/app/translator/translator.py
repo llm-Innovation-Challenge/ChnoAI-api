@@ -63,13 +63,13 @@ def translate_text_with_api(text: str, model: str) -> str:
     response = requests.post(API_URL, headers=HEADERS, json=data)
     
     if response.status_code == 200:
-        return response.json()["choices"][0]["message"]["content"]
+        return response.json()["choices"][0]["message"]["content"] # 성공 시 번역 결과 반환
     else:
         print(f"Translation API error: {response.status_code}, {response.text}")
-        return text
+        return text  # 오류 발생 시 원본 텍스트 반환
 
 
-def translate_q_and_a(conversation_list: list[QA], translation_model: str) -> list[QA]:
+def translate_q_and_a(conversation_list: list[QA], translation_model: str = "solar-1-mini-translate-koen") -> list[QA]:
     """
     주어진 Q&A 목록을 번역하는 함수.
     
@@ -80,13 +80,15 @@ def translate_q_and_a(conversation_list: list[QA], translation_model: str) -> li
 
     Args:
         conversation_list (list[QA]): 번역할 Q&A 목록.
-        translation_model (str): 사용할 번역 모델.
+        translation_model (str): 사용할 번역 모델. 기본값 = "solar-1-mini-translate-koen"
 
     Returns:
         list[QA]: 번역된 Q&A 목록.
     """
-    passage_embeddings = UpstageEmbeddings(model="solar-embedding-1-large-passage")
     translated_conversations = []
+
+    # 임베딩 모델 초기화
+    passage_embeddings = UpstageEmbeddings(model="solar-embedding-1-large-passage")
 
     def translate_if_needed(text: str) -> str:
         """
@@ -132,9 +134,10 @@ if __name__ == "__main__":
         
     except Exception as e:
         print(f"Error fetching conversation data: {e}")
-        conversation_data = []
+        conversation_data = []   # 오류 발생 시 빈 리스트 초기화
 
-    translated_result = translate_q_and_a(conversation_data, "solar-1-mini-translate-koen")
+    # Q&A 번역 수행
+    translated_result = translate_q_and_a(conversation_data)
 
     for idx, conversation in enumerate(translated_result):
         print(f"번역된 질문 {idx+1}: {conversation['q']}")
