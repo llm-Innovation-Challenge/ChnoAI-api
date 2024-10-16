@@ -314,7 +314,7 @@ def replace_code_snippets(document:str, snippets_dict:dict[str, str]) -> str:
 def postprocess_blog(state: GraphState)-> GraphState:
     '''
     블로그 글을 후처리하는 함수입니다. 문서 내의 코드 인덱스에 원래 코드를 삽입하고,
-    헤딩 표시(#)를 제거하여 최종 블로그 문서를 생성합니다.
+    최종 블로그 문서를 생성합니다.
 
     Args:
         state (GraphState): 후처리를 위한 상태 정보를 포함하는 GraphState 객체입니다.
