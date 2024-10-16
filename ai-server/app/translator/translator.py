@@ -3,30 +3,15 @@ import requests
 import numpy as np
 
 from dotenv import load_dotenv
-from typing import List
-
-
-from langfuse import Langfuse
-from langfuse.callback import CallbackHandler
 from langchain_upstage import UpstageEmbeddings
 
-from app.qna_processor.evaluation_utils import EvaluationUtils
 from app.type import QA
+from app.utils import fetch_messages, format_message
+from app.constants import CONVERSATION_ID
+from app.db_client import get_db_client
 
 load_dotenv()
 
-# Initialize Langfuse and models
-langfuse_handler = CallbackHandler()
-langfuse = Langfuse()
-
-passage_embeddings = UpstageEmbeddings(model="solar-embedding-1-large-passage")
-evaluation_utils = EvaluationUtils()
-
-API_URL = "https://api.upstage.ai/v1/solar/chat/completions"
-HEADERS = {"Authorization": f"Bearer {os.getenv('UPSTAGE_API_KEY')}"}
-
-
-# 텍스트에 한국어가 포함되어 있는지 확인하는 함수
 def contains_korean(text: str) -> bool:
     """
     주어진 텍스트에 한국어가 포함되어 있는지 확인하는 함수.
@@ -39,7 +24,6 @@ def contains_korean(text: str) -> bool:
     """
     return any('가' <= char <= '힣' for char in text)
 
-# 두 개의 임베딩 벡터 간 유사도를 계산하는 함수
 def calculate_similarity(embedded_query, embedded_documents):
     """
     쿼리 임베딩과 문서 임베딩 간의 유사성을 계산하는 함수.
@@ -67,6 +51,8 @@ def translate_text_with_api(text: str, model: str) -> str:
     Returns:
         str: 번역된 텍스트.
     """
+    API_URL = "https://api.upstage.ai/v1/solar/chat/completions"
+    HEADERS = {"Authorization": f"Bearer {os.getenv('UPSTAGE_API_KEY')}"}
 
     data = {
         "model": model,
@@ -83,8 +69,7 @@ def translate_text_with_api(text: str, model: str) -> str:
         return text
 
 
-# Q&A 형식 대화를 번역하는 함수
-def translate_q_and_a(conversation_list: List[QA], translation_model: str, passage_embeddings):
+def translate_q_and_a(conversation_list: list[QA], translation_model: str) -> list[QA]:
     """
     주어진 Q&A 목록을 번역하는 함수.
     
@@ -100,7 +85,7 @@ def translate_q_and_a(conversation_list: List[QA], translation_model: str, passa
     Returns:
         list[QA]: 번역된 Q&A 목록.
     """
-
+    passage_embeddings = UpstageEmbeddings(model="solar-embedding-1-large-passage")
     translated_conversations = []
 
     def translate_if_needed(text: str) -> str:
@@ -139,14 +124,17 @@ def translate_q_and_a(conversation_list: List[QA], translation_model: str, passa
 
 
 if __name__ == "__main__":
-    EXAMPLE1_CONVERSATION_ID = 162
+    database = get_db_client() 
+    
     try:
-        conversation_data = evaluation_utils.get_messages_by_conversation_id(EXAMPLE1_CONVERSATION_ID)
+        conversation = fetch_messages(database, CONVERSATION_ID["EXAMPLE_1_KOR"])
+        conversation_data = format_message(conversation)
+        
     except Exception as e:
         print(f"Error fetching conversation data: {e}")
         conversation_data = []
 
-    translated_result = translate_q_and_a(conversation_data, "solar-1-mini-translate-koen", passage_embeddings)
+    translated_result = translate_q_and_a(conversation_data, "solar-1-mini-translate-koen")
 
     for idx, conversation in enumerate(translated_result):
         print(f"번역된 질문 {idx+1}: {conversation['q']}")

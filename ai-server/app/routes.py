@@ -6,7 +6,6 @@ import re
 from flask import request, jsonify, render_template, Blueprint
 from supabase import  Client
 from langfuse.callback import CallbackHandler
-from langchain_upstage import UpstageEmbeddings
 
 from app.db_client import get_db_client
 from app.utils import fetch_messages, format_message, get_current_datetime, format_input, format_extracted_code
@@ -64,7 +63,7 @@ def generate_blog():
     '''
     Solar-LLM 및 Solar-API를 활용하여 GPT와의 대화를 정리한 블로그를 생성하는 API입니다.
 
-    작업 과정:
+    모듈:
     1. translator 모듈을 사용하여 한글로 된 대화를 영어로 번역합니다.
        - 사용 모델명: solar-embedding-1-large-passage, solar-1-mini-translate-koen
     2. subtitle_generator 모듈을 사용하여 노션 페이지의 목차를 생성합니다.
@@ -89,26 +88,25 @@ def generate_blog():
     messages = fetch_messages(database, conversation_id)
     conversation_data = format_message(messages)
 
-    passage_embeddings = UpstageEmbeddings(model="solar-embedding-1-large-passage")
-    translated_conversation_data = translate_q_and_a(conversation_data, "solar-1-mini-translate-koen", passage_embeddings)
+    # 1. 한글 대화 텍스트 영어로 번역 (translator 모듈)
+    translated_conversation_data = translate_q_and_a(conversation_data, "solar-1-mini-translate-koen")
     
-    
-    # 1. 목차 생성 (subtitle_generator 모듈)
+    # 2. 목차 생성 (subtitle_generator 모듈)
     subtitle_generator = SubtitleGenerator(config_path = "app/configs/subtitle_generator.yaml")
     subtitle_docs = subtitle_generator(translated_conversation_data)
 
-    # 2. 질문 압축 및 코드 추출 (qna_processor 모듈)
-    processed_qna_list, code_documents = run_processor_qna(translated_conversation_data )
+    # 3. 질문 압축 및 코드 추출 (qna_processor 모듈)
+    processed_qna_list, code_documents = run_processor_qna(translated_conversation_data)
 
-    # 블로그 작성 모듈 이전에 목차 생성 모듈에서 나온 결과 전처리
+    # 3-1.블로그 작성 모듈 이전에 목차 생성 모듈에서 나온 결과 전처리
     ## 목차 딕셔너리의 value 리스트 내에 있는 값들을 모두 문자열로 처리
     for key, value in subtitle_docs[1].items():
         subtitle_docs[1][key] = [str(v) for v in value]
 
-    # 블로그 작성 모듈 이전에 질문 압축 및 코드 추출 모듈에서 나온 결과 전처리
+    # 3-2. 블로그 작성 모듈 이전에 질문 압축 및 코드 추출 모듈에서 나온 결과 전처리
     processed_code_documents = format_extracted_code(code_documents)
 
-    # 3. 블로그 작성 (writer 모듈)
+    # 4. 블로그 작성 (writer 모듈)
     ## 들어갈 graph_state를 정의
     graph_state = WriterGraphState(
         preprocessed_conversations=processed_qna_list,
@@ -136,7 +134,7 @@ def generate_blog():
     final_technote = format_input(final_state["final_documents"])
     title = get_current_datetime()
 
-    # 6. 노션 페이지 생성 및 게시
+    # 5. 노션 페이지 생성 및 게시
     notion_title = title
     notion_content = final_technote
     question_type = []
