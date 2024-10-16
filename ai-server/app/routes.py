@@ -111,7 +111,7 @@ def generate_blog():
 
     # 3. 블로그 제목 생성 (title_generator 모듈)
     title_generator = TitleGenerator(config_path="app/configs/title_generator.yaml")
-    title = title_generator(subtitle_docs[1])
+    title = title_generator(subtitle_docs[0])
 
     # 4. 블로그 작성 (writer 모듈)
     ## 들어갈 graph_state를 정의
