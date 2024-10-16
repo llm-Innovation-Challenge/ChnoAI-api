@@ -202,6 +202,7 @@ def find_indices_and_snippet_with_code_id(code_id: str, doc_dict:dict[str, str])
     pattern = fr"<-- {code_id}: .*? -->"
     indices_list = []
     heading_list = []
+    whole_snippet = None
 
     for key in doc_dict:
         text = doc_dict[key]  # 현재 문서 텍스트 가져오기
@@ -257,7 +258,7 @@ def refine_draft_blog(state: GraphState) -> GraphState:
         indices_list, heading_list, whole_snippet = find_indices_and_snippet_with_code_id(code_id, state['final_documents'])
         
         # 인덱스가 2개 미만인 경우 다음으로 넘어감
-        if len(indices_list) < 2:
+        if (len(indices_list) < 2) or (whole_snippet == None):
             continue        
         
         # 제목 목록을 프롬프트용으로 포맷팅
@@ -307,7 +308,7 @@ def replace_code_snippets(document:str, snippets_dict:dict[str, str]) -> str:
         # 대체할 패턴을 정의
         pattern = f"<-- {snippet_key}:.*?-->"
         # document 내에서 해당 placeholder를 딕셔너리의 value로 대체
-        document = re.sub(pattern, "```\n" + snippets_dict[snippet_key] + "\n```\n", document)
+        document = re.sub(pattern, "\n```\n" + snippets_dict[snippet_key] + "\n```\n", document)
     
     return document
 
