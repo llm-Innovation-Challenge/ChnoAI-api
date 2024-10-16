@@ -15,7 +15,7 @@ from langfuse.callback import CallbackHandler
 
 from app.type import CodeStorage, QA, QAProcessorGraphState as GraphState
 from app.constants import CONVERSATION_ID
-from app.utils import fetch_messages
+from app.utils import fetch_messages, format_message
 from app.qna_processor.evaluate_score import evaluate_processed_answer, evaluate_coherence  
 
 langfuse_handler = CallbackHandler()
@@ -249,7 +249,8 @@ if __name__ == "__main__":
     model_name = "solar-pro"
     conversation_id = CONVERSATION_ID["EXAMPLE_1"]
     conversation = fetch_messages(conversation_id)
-    processed_qna_list, code_documents = run_processor_qna(conversation, model_name)
+    conversation_data = format_message(conversation)
+    processed_qna_list, code_documents = run_processor_qna(conversation_data, model_name)
     
     print(f"Processed QnA:\n {processed_qna_list} \n")
     print(f"Code document:\n {code_documents} \n")
