@@ -46,6 +46,7 @@ class QnAProcessor:
     def __init__(self, qna_list: list[QA], model) -> None:
         self.qna_list = qna_list
         self.model = model
+        self.model_mini = ChatUpstage(model='solar-mini')
         self.code_documents: list[CodeStorage] = []
     
     def process_qna_pair(self, graph_state: GraphState, MAX_ITERATION: int = 3) -> Tuple[list[QA], list[CodeStorage]]:
@@ -96,13 +97,13 @@ class QnAProcessor:
 
             recall_score = 0
             best_processed_answer = ""
-            for i in range(MAX_ITERATION):
+            for i in range(MAX_ITERATION+7):
                 # 답변을 백틱 처리합니다.
                 processed_answer = self.backtick_process_with_llm(answer)
                 evaluation_results = evaluate_processed_answer(answer, processed_answer)
 
                 current_recall_score = evaluation_results.get("recall")
-                print(f"Iteration {i + 1}/{MAX_ITERATION}")
+                print(f"Iteration {i + 1}/{MAX_ITERATION+7}")
                 print(f"Recall score: {current_recall_score}")
 
                 # 현재 점수가 이전 점수보다 높으면 최상의 처리된 답변 업데이트
@@ -188,7 +189,8 @@ class QnAProcessor:
         """
         backtick_processor: Annotated[str, HumanMessage] = langfuse.get_prompt("backtick_processor")
         prompt = backtick_processor.compile(answer=answer)
-        response = self.model.invoke(prompt)
+        #response = self.model.invoke(prompt)
+        response = self.model_mini.invoke(prompt)
         return response.content.strip()
 
 
