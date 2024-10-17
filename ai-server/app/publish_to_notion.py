@@ -1,7 +1,7 @@
 import os
 import requests
 from dotenv import load_dotenv
-
+import re
 from openai import OpenAI
 import json
 from flask import Blueprint, request, jsonify
@@ -9,7 +9,7 @@ from flask import Blueprint, request, jsonify
 # .env 파일의 환경 변수 로드
 load_dotenv()
 
-GPT_FORMATTER_ON = True
+GPT_FORMATTER_ON = False
 NOTION_TOKEN = os.getenv('NOTION_TOKEN')
 NOTION_DATABASE_ID = os.getenv('NOTION_DATABASE_ID')
 
@@ -93,7 +93,7 @@ def markdown_to_notion_blocks(content):
                 }
             })
         i += 1
-    
+   
     return blocks
 
 def format_content(content):
@@ -143,8 +143,10 @@ def create_notion_page(title, content, question_type, os_tags, framework_tags, l
     }
 
     print(question_type, os_tags, framework_tags, language_tags, tech_stack_tags)
+    # 마지막 처리 전 content내의 줄바꿈이 2개이상 있는 것을 모두 하나로 변경
+    content_cleaned = re.sub(r'\n+', '\n', content)
 
-    content_blocks = markdown_to_notion_blocks(content)
+    content_blocks = markdown_to_notion_blocks(content_cleaned)
 
     data = {
         "parent": {"database_id": NOTION_DATABASE_ID},
